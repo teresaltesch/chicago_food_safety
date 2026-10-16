@@ -1,0 +1,3 @@
+SELECT *
+FROM foodinspections_chicago
+LIMIT 25;
