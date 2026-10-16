@@ -1,0 +1,31 @@
+-- Creating new view to clean the Chicago food inspection data
+
+CREATE OR REPLACE VIEW foodinspections_clean AS
+SELECT
+	inspection_id,
+	facility_type,
+	UPPER(TRIM(dba_name)) AS dba_name_clean,
+	UPPER(TRIM(aka_name)) AS legal_name_clean,
+	TO_DATE(inspection_date, 'MM/DD/YYYY') AS inspection_date_clean,
+-- Clean risk field for easier manipulation
+CASE WHEN
+	risk LIKE ('%High%') THEN 1
+	WHEN
+	risk LIKE ('%Medium%') THEN 2
+	WHEN
+	risk LIKE ('%Low%') THEN 3
+	ELSE 0
+END AS risk_tier,
+LEFT(TRIM(zip), 5) AS zipcode_clean,
+results AS results_raw,
+-- Clean results field for easier manipulation
+CASE WHEN
+	results IN ('Pass', 'Pass w/ Conditions') THEN 'Approved'
+	WHEN
+	results = 'Fail' THEN 'Violation'
+	WHEN
+	results LIKE ('%Out of Business%') THEN 'Closed'
+	ELSE 'Pending/Other'
+END AS operational_status,
+violations
+FROM foodinspections_chicago;
