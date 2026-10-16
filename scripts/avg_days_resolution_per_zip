@@ -1,0 +1,23 @@
+-- Summary aggregation calculating the average days per zip code to resolution
+
+SELECT
+LEFT(TRIM(failed.zipcode_clean), 5) AS chicago_zip,
+COUNT(*) AS resolved_violations,
+ROUND(AVG(passed.inspection_date_clean::DATE - failed.inspection_date_clean::DATE), 1) AS median_days_to_compliance
+FROM foodinspections_clean failed
+INNER JOIN
+	foodinspections_clean passed
+	ON failed.dba_name_clean = passed.dba_name_clean
+	AND failed.zipcode_clean = passed.zipcode_clean
+WHERE
+	failed.results_raw = 'Fail'
+	AND passed.results_raw IN ('Pass', 'Pass w/ Conditions')
+	AND passed.inspection_date_clean::DATE > failed.inspection_date_clean::DATE
+	AND failed.zipcode_clean IS NOT NULL
+	AND failed.zipcode_clean <> ''
+GROUP BY
+	LEFT(TRIM(failed.zipcode_clean), 5)
+HAVING
+	COUNT(*) >= 5
+ORDER BY
+	chicago_zip, median_days_to_compliance;
