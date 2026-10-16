@@ -1,0 +1,25 @@
+-- Self-join query that calculates how many days it takes businesses to fix a fail and become compliant before reinspection
+
+SELECT
+	failed.dba_name_clean AS business_name,
+	failed.zipcode_clean AS	zip_code,
+	failed.inspection_date_clean AS date_failed,
+	failed.results_raw AS initial_results,
+
+	passed.inspection_date_clean AS date_reinspected,
+	passed.results_raw AS results_resolved,
+	(passed.inspection_date_clean - failed.inspection_date_clean) AS no_days_til_compliance
+FROM
+	foodinspections_clean failed
+INNER JOIN foodinspections_clean passed
+	ON failed.dba_name_clean = passed.dba_name_clean
+	AND failed.zipcode_clean = passed.zipcode_clean
+WHERE
+	passed.inspection_date_clean > failed.inspection_date_clean
+	AND
+		failed.results_raw = 'Fail'
+	AND 
+		passed.results_raw IN ('Pass', 'Pass w/ Conditions')
+ORDER BY
+	no_days_til_compliance
+LIMIT 100;
